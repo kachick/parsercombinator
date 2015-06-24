@@ -111,6 +111,19 @@ module ParserCombinator
     def optional
       option self
     end
+    
+    # @todo I think a better way, each parser will have map via block
+    def map(&block)
+      raise ArgumentError unless block_given?
+      
+      ->string, position {
+        ret = parse(string, position)
+        nstr = block.call ret.string
+        ret.string = nstr
+        ret
+        # block.call parser.call(string, position).string
+      }.extend Parsable
+    end
   end
   
   
@@ -166,19 +179,6 @@ module ParserCombinator
       ->string, position {
         parser = block.call
         parser.call(string, position)
-      }.extend Parsable
-    end
-    
-    # @todo I think a better way, each parser will have map via block
-    def map(parser, &block)
-      raise ArgumentError unless block_given?
-      
-      ->string, position {
-        ret = parser.call(string, position)
-        nstr = block.call ret.string
-        ret.string = nstr
-        ret
-        # block.call parser.call(string, position).string
       }.extend Parsable
     end
   end

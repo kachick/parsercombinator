@@ -22,14 +22,14 @@ parser = ParserCombinator.build do |h|
   operator = regexp /\A[+-]/
 
   parenthesis = lazy do
-    map(token('(') + h.expression + token(')')) do |ret|
+    (token('(') + h.expression + token(')')).map do |ret|
       ret
     end
   end
 
-  atom = map(integer){|s|s.to_i} | parenthesis
+  atom = integer.map{|s|s.to_i} | parenthesis
 
-  h.expression = map(atom + many(operator + atom)) do |ret|
+  h.expression = (atom + many(operator + atom)).map do |ret|
     ret.flatten 1
   end
 
