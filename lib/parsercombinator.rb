@@ -95,6 +95,34 @@ module ParserCombinator
       choice self, parser
     end
     
+    def drop_then(parser)
+      raise ArgumentError unless parser.kind_of? Parsable
+      
+      ->string, position {
+        ret = parse(string, position)
+        return Fail.new if ret.kind_of? Fail
+        oret = parser.parse(string, ret.position)
+        return Fail.new if oret.kind_of? Fail
+        Pass.new oret.string, oret.position
+      }.extend Parsable
+    end
+    
+    alias_method :>>, :drop_then
+
+    def then_drop(parser)
+      raise ArgumentError unless parser.kind_of? Parsable
+      
+      ->string, position {
+        ret = parse(string, position)
+        return Fail.new if ret.kind_of? Fail
+        oret = parser.parse(string, ret.position)
+        return Fail.new if oret.kind_of? Fail
+        Pass.new ret.string, oret.position
+      }.extend Parsable
+    end
+  
+    alias_method :<<, :then_drop
+  
     def +(parser)
       raise ArgumentError unless parser.kind_of? Parsable
       
