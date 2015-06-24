@@ -38,4 +38,11 @@ p parser.run('1+2-(3+1-(4))')
 # p parser.run(DATA.read)
 
 
+csv = "boo,\"foo,woo\",goo\r\nboo,\"foo\"\"woo\",goo\r\n"
+csv_parser = ParserCombinator.build do |h|
+  
+end
+
+csv_parser.parse csv
+
 __END__
