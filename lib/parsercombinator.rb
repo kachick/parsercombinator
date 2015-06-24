@@ -121,6 +121,7 @@ module ParserCombinator
       option self
     end
 
+    # Like a regexp `*'
     def many
       ->string, position {
         pos = position
@@ -136,6 +137,20 @@ module ParserCombinator
         end
         
       }.extend Parsable
+    end
+
+    # Like a regexp `+'
+    def many1
+      ->string, position {
+        ret = parse(string, position)
+        return Fail unless ret.kind_of? Pass
+        rest = many.parse string, ret.position
+        Pass.new [ret.string, *rest.string], rest.position
+      }.extend Parsable
+    end
+    
+    def endby1(terminator)
+      (many1 + terminator).map(&:flatten)
     end
     
     # @todo I think a better way, each parser will have map via block
