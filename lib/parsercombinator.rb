@@ -59,25 +59,6 @@ module ParserCombinator
         end
       }.extend Parsable
     end
-    
-    def many(parser)
-      raise ArgumentError unless parser.kind_of? Parsable
-      
-      ->string, position {
-        pos = position
-        rets = []
-        loop do
-          case ret = parser.call(string, pos)
-          when Pass
-            rets << ret.string
-            pos = ret.position
-          else
-            return Pass.new(rets, pos)
-          end
-        end
-        
-      }.extend Parsable
-    end
   end
 
   module Parsable
@@ -138,6 +119,23 @@ module ParserCombinator
     
     def optional
       option self
+    end
+
+    def many
+      ->string, position {
+        pos = position
+        rets = []
+        loop do
+          case ret = parse(string, pos)
+          when Pass
+            rets << ret.string
+            pos = ret.position
+          else
+            return Pass.new(rets, pos)
+          end
+        end
+        
+      }.extend Parsable
     end
     
     # @todo I think a better way, each parser will have map via block

@@ -27,7 +27,7 @@ parser = ParserCombinator.build do |h|
 
   atom = integer.map{|s|s.to_i} | parenthesis
 
-  h.expression = (atom + many(operator + atom)).map do |ret|
+  h.expression = (atom + (operator + atom).many).map do |ret|
     ret.flatten
   end
 
