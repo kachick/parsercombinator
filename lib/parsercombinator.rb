@@ -6,7 +6,7 @@ require 'ostruct'
 # @todo Thinking to use StringScanner
 #       String#{slice,[]} generating new string objects :<.
 module ParserCombinator
-  Result = Struct.new :string, :position
+  Result = Struct.new :matched, :position
   class Pass < Result
     def pass?
       true
@@ -101,7 +101,7 @@ module ParserCombinator
         return Fail.new if ret.fail?
         oret = parser.parse(string, ret.position)
         return Fail.new if oret.fail?
-        Pass.new oret.string, oret.position
+        Pass.new oret.matched, oret.position
       }.extend Parsable
     end
     
@@ -115,7 +115,7 @@ module ParserCombinator
         return Fail.new if ret.fail?
         oret = parser.parse(string, ret.position)
         return Fail.new if oret.fail?
-        Pass.new ret.string, oret.position
+        Pass.new ret.matched, oret.position
       }.extend Parsable
     end
   
@@ -130,7 +130,7 @@ module ParserCombinator
         return Fail.new if ret.fail?
         oret = parser.parse(string, ret.position)
         return Fail.new if oret.fail?
-        Pass.new [ret.string, oret.string], oret.position
+        Pass.new [ret.matched, oret.matched], oret.position
       }.extend Parsable
     end
     
@@ -146,7 +146,7 @@ module ParserCombinator
         loop do
           case ret = parse(string, pos)
           when Pass
-            rets << ret.string
+            rets << ret.matched
             pos = ret.position
           else
             return Pass.new(rets, pos)
@@ -162,7 +162,7 @@ module ParserCombinator
         ret = parse(string, position)
         return Fail unless ret.pass?
         rest = many.parse string, ret.position
-        Pass.new [ret.string, *rest.string], rest.position
+        Pass.new [ret.matched, *rest.matched], rest.position
       }.extend Parsable
     end
     
@@ -176,10 +176,10 @@ module ParserCombinator
       
       ->string, position {
         ret = parse(string, position)
-        nstr = block.call ret.string
-        ret.string = nstr
+        nstr = block.call ret.matched
+        ret.matched = nstr
         ret
-        # block.call parser.call(string, position).string
+        # block.call parser.call(string, position).matched
       }.extend Parsable
     end
   end
@@ -207,7 +207,7 @@ module ParserCombinator
       }.extend Parsable
     end
 
-    def token(str)
+    def string(str)
       ->string, position {
         if string[position, str.length] == str
           Pass.new str, position + str.length

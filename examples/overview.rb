@@ -5,16 +5,16 @@ require_relative '../lib/parsercombinator'
 
 parser = ParserCombinator.build do |h|
   # sequence(
-  #   # choice(token('baz'), integer),
-  #   token('baz') | integer | token('daafa'),
-  #   token('g').optional,
-  #   token('foo'),
+  #   # choice(string('baz'), integer),
+  #   string('baz') | integer | string('daafa'),
+  #   string('g').optional,
+  #   string('foo'),
   #   rest
   # )
   
-    # (token('baz') | integer | token('daafa')) + 
-    # token('g').optional + 
-    # # token('foo') + 
+    # (string('baz') | integer | string('daafa')) + 
+    # string('g').optional + 
+    # # string('foo') + 
     # regexp(/\Afoo/) + 
     # rest
 
@@ -22,7 +22,7 @@ parser = ParserCombinator.build do |h|
   operator = regexp /\A[+-]/
 
   parenthesis = lazy do
-    token('(') >> h.expression << token(')')
+    string('(') >> h.expression << string(')')
   end
 
   atom = integer.map{|s|s.to_i} | parenthesis
@@ -46,7 +46,7 @@ p parser.run('1+2-(3+1-(4))')
 # csv_parser.parse csv
 
 parser = ParserCombinator.build do
-  token('foo').endby1(token ':)')
+  string('foo').endby1(string ':)')
 end
 
 p parser.parse('foofoofoo:)')
