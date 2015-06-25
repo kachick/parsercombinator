@@ -7,8 +7,25 @@ require 'ostruct'
 #       String#{slice,[]} generating new string objects :<.
 module ParserCombinator
   Result = Struct.new :string, :position
-  class Pass < Result; end
-  class Fail < Result; end
+  class Pass < Result
+    def pass?
+      true
+    end
+    
+    def fail?
+      false
+    end
+  end
+  
+  class Fail < Result
+    def pass?
+      false
+    end
+    
+    def fail?
+      true
+    end
+  end
   
   class Error < StandardError; end
   class InvalidOperationError < Error; end
@@ -39,7 +56,7 @@ module ParserCombinator
     #     new_pos = nil
     #     parsers.map do |parser|
     #       ret = parser.call(string, (new_pos || position))
-    #       return ret unless ret.kind_of? Pass
+    #       return ret unless ret.pass?
     #       new_pos = ret.position
     #       ret
     #     end
@@ -81,9 +98,9 @@ module ParserCombinator
       
       ->string, position {
         ret = parse(string, position)
-        return Fail.new if ret.kind_of? Fail
+        return Fail.new if ret.fail?
         oret = parser.parse(string, ret.position)
-        return Fail.new if oret.kind_of? Fail
+        return Fail.new if oret.fail?
         Pass.new oret.string, oret.position
       }.extend Parsable
     end
@@ -95,9 +112,9 @@ module ParserCombinator
       
       ->string, position {
         ret = parse(string, position)
-        return Fail.new if ret.kind_of? Fail
+        return Fail.new if ret.fail?
         oret = parser.parse(string, ret.position)
-        return Fail.new if oret.kind_of? Fail
+        return Fail.new if oret.fail?
         Pass.new ret.string, oret.position
       }.extend Parsable
     end
@@ -110,9 +127,9 @@ module ParserCombinator
       # sequence self, other
       ->string, position {
         ret = parse(string, position)
-        return Fail.new if ret.kind_of? Fail
+        return Fail.new if ret.fail?
         oret = parser.parse(string, ret.position)
-        return Fail.new if oret.kind_of? Fail
+        return Fail.new if oret.fail?
         Pass.new [ret.string, oret.string], oret.position
       }.extend Parsable
     end
@@ -143,7 +160,7 @@ module ParserCombinator
     def many1
       ->string, position {
         ret = parse(string, position)
-        return Fail unless ret.kind_of? Pass
+        return Fail unless ret.pass?
         rest = many.parse string, ret.position
         Pass.new [ret.string, *rest.string], rest.position
       }.extend Parsable
