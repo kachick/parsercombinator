@@ -70,7 +70,7 @@ module ParserCombinator
       raise ArgumentError unless parser.kind_of? Parsable
 
       ->string, position {
-        case ret = parser.call(string, position)
+        case ret = parser.parse(string, position)
         when Fail
           Pass.new(*ret.values)
         else
@@ -170,14 +170,14 @@ module ParserCombinator
     end
     
     def sepby1(separator)
-      (self + (separator >> self).many).map{|p|p.flatten 1}
+      sequence(self, (separator >> self).many).map{|p|p.flatten 1}
     end
     
     def try
       ->string, position {
         ret = parse(string, position)
         if ret.fail?
-          Pass.new nil, position
+          Fail.new nil, position
         else
           ret
         end
