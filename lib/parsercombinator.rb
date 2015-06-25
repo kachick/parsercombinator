@@ -85,8 +85,6 @@ module ParserCombinator
       call string, position
     end
     
-    alias_method :run, :parse
-    
     def |(parser)
       raise ArgumentError unless parser.kind_of? Parsable
       
