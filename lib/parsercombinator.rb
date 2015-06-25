@@ -49,20 +49,22 @@ module ParserCombinator
       }.extend Parsable
     end
     
-    # def sequence(*parsers)
-    #   raise ArgumentError unless parsers.all?{|p|p.kind_of? Parsable}
-    #   
-    #   ->string, position {
-    #     new_pos = nil
-    #     parsers.map do |parser|
-    #       ret = parser.call(string, (new_pos || position))
-    #       return ret unless ret.pass?
-    #       new_pos = ret.position
-    #       ret
-    #     end
-    #   }.extend Parsable
-    # end
-    # 
+    def sequence(*parsers)
+      raise ArgumentError unless parsers.all?{|p|p.kind_of? Parsable}
+      
+      ->string, position {
+        new_pos = nil
+        rets = []
+        parsers.map do |parser|
+          ret = parser.call(string, (new_pos || position))
+          return ret unless ret.pass?
+          rets << ret
+          new_pos = ret.position
+        end
+        Pass.new rets, new_pos
+      }.extend Parsable
+    end
+    
 
     def option(parser)
       raise ArgumentError unless parser.kind_of? Parsable
