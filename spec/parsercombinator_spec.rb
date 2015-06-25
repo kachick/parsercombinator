@@ -3,14 +3,18 @@
 require_relative 'spec_helper'
 
 describe ParserCombinator do
+  before :each do
+    @dsl = ParserCombinator::BuilderDSL.new
+  end
+  
+  let :dsl do
+    @dsl
+  end
+  
   context 'DSL' do
-    before :each do
-      @context = ParserCombinator::BuilderDSL.new
-    end
-
     context '#string' do
       before :each do
-        @parser = @context.string 'foo'
+        @parser = dsl.string 'foo'
       end
       
       it 'returns a parser for the string' do
@@ -21,7 +25,7 @@ describe ParserCombinator do
 
     context '#regexp' do
       before :each do
-        @parser = @context.regexp(/\Afoo[2-5]/i)
+        @parser = dsl.regexp(/\Afoo[2-5]/i)
       end
       
       it 'returns a parser for the regexp' do
@@ -30,13 +34,27 @@ describe ParserCombinator do
       end
       
       it 'raises an InvalidOperationError if the regexp not start with \A' do
-        expect{@context.regexp(/^foo[2-5]/)}.to raise_error(ParserCombinator::InvalidOperationError)
+        expect{dsl.regexp(/^foo[2-5]/)}.to raise_error(ParserCombinator::InvalidOperationError)
       end
     end
 
+    context '#sequence' do
+      before :each do
+        @parser = dsl.sequence(dsl.string('foo'), dsl.string('bar'))
+      end
+      
+      it 'returns a parser for the string, the parser passes when unmatched' do
+        expect(@parser.parse('foobar').matched).to eq(['foo', 'bar'])
+        expect(@parser.parse('bar').fail?).to be(true)
+        expect(@parser.parse('fooXbar').fail?).to be(true)
+      end
+    end
+  end
+  
+  context 'Combinators' do
     context '#optional' do
       before :each do
-        @parser = @context.string('foo').optional + @context.rest
+        @parser = dsl.string('foo').optional + dsl.rest
       end
       
       it 'returns a parser for the string, the parser passes when unmatched' do
@@ -48,7 +66,7 @@ describe ParserCombinator do
 
     context '#many' do
       before :each do
-        @parser = @context.string('foo').many
+        @parser = dsl.string('foo').many
       end
       
       it 'returns a parser for the strings' do
@@ -58,10 +76,47 @@ describe ParserCombinator do
         expect(@parser.parse('foofoofoo').matched).to eq(['foo', 'foo', 'foo'])
       end
     end
+
+    context '#many1' do
+      before :each do
+        @parser = dsl.string('foo').many1
+      end
+      
+      it 'returns a parser for the strings' do
+        expect(@parser.parse('foo').matched).to eq(['foo'])
+        expect(@parser.parse('xfoo').fail?).to be(true)
+        expect(@parser.parse('foox').matched).to eq(['foo'])
+        expect(@parser.parse('foofoofoo').matched).to eq(['foo', 'foo', 'foo'])
+      end
+    end
+
+    context '#endby1' do
+      before :each do
+        @parser = dsl.string('foo').endby1(dsl.string 'bar')
+      end
+      
+      it 'returns a parser for the strings' do
+        expect(@parser.parse('foobar').matched).to eq(['foo'])
+        expect(@parser.parse('xfoobar').fail?).to be(true)
+        expect(@parser.parse('foobarfoobar').matched).to eq(['foo', 'foo'])
+      end
+    end
     
+    context '#sepby1' do
+      before :each do
+        @parser = dsl.string('foo').sepby1(dsl.string 'bar')
+      end
+      
+      it 'returns a parser for the strings' do
+        expect(@parser.parse('foo').matched).to eq(['foo'])
+        expect(@parser.parse('foobar').pass?).to be(true)
+        expect(@parser.parse('foobarfoobarfoo').matched).to eq(['foo', 'foo', 'foo'])
+      end
+    end
+
     context '#|' do
       before :each do
-        @parser = @context.string('foo') | @context.string('bar')
+        @parser = dsl.string('foo') | dsl.string('bar')
       end
       
       it 'returns a parser for the strings' do

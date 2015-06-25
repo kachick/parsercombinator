@@ -45,7 +45,7 @@ module ParserCombinator
           end
         end
         
-        Fail.new
+        Fail.new nil, position
       }.extend Parsable
     end
     
@@ -58,7 +58,7 @@ module ParserCombinator
         parsers.map do |parser|
           ret = parser.call(string, (new_pos || position))
           return ret unless ret.pass?
-          rets << ret
+          rets << ret.matched
           new_pos = ret.position
         end
         Pass.new rets, new_pos
@@ -98,9 +98,9 @@ module ParserCombinator
       
       ->string, position {
         ret = parse(string, position)
-        return Fail.new if ret.fail?
+        return ret if ret.fail?
         oret = parser.parse(string, ret.position)
-        return Fail.new if oret.fail?
+        return oret if oret.fail?
         Pass.new oret.matched, oret.position
       }.extend Parsable
     end
@@ -112,24 +112,23 @@ module ParserCombinator
       
       ->string, position {
         ret = parse(string, position)
-        return Fail.new if ret.fail?
+        return ret if ret.fail?
         oret = parser.parse(string, ret.position)
-        return Fail.new if oret.fail?
+        return oret if oret.fail?
         Pass.new ret.matched, oret.position
       }.extend Parsable
     end
   
     alias_method :<<, :then_drop
   
+    # sequence self, other
     def +(parser)
       raise ArgumentError unless parser.kind_of? Parsable
-      
-      # sequence self, other
       ->string, position {
         ret = parse(string, position)
-        return Fail.new if ret.fail?
+        return ret if ret.fail?
         oret = parser.parse(string, ret.position)
-        return Fail.new if oret.fail?
+        return oret if oret.fail?
         Pass.new [ret.matched, oret.matched], oret.position
       }.extend Parsable
     end
@@ -160,14 +159,29 @@ module ParserCombinator
     def many1
       ->string, position {
         ret = parse(string, position)
-        return Fail unless ret.pass?
+        return ret  unless ret.pass?
         rest = many.parse string, ret.position
         Pass.new [ret.matched, *rest.matched], rest.position
       }.extend Parsable
     end
     
     def endby1(terminator)
-      (many1 + terminator).map(&:flatten)
+      (self << terminator).many1
+    end
+    
+    def sepby1(separator)
+      (self + (separator >> self).many).map{|p|p.flatten 1}
+    end
+    
+    def try
+      ->string, position {
+        ret = parse(string, position)
+        if ret.fail?
+          Pass.new nil, position
+        else
+          ret
+        end
+      }.extend Parsable
     end
     
     # @todo I think a better way, each parser will have map via block
@@ -236,7 +250,7 @@ module ParserCombinator
     
       ->string, position {
         parser = block.call
-        parser.call(string, position)
+        parser.parse(string, position)
       }.extend Parsable
     end
   end

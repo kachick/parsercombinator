@@ -33,22 +33,32 @@ parser = ParserCombinator.build do |h|
   h.expression = sequence(atom, (operator + atom).many)
 end
 
-p parser.parse('1+2-(3+1-(4))')
+# p parser.parse('1+2-(3+1-(4))')
 # p parser.parse('foobar')
 # p parser.parse(DATA.read)
 
 
-# csv = "boo,\"foo,woo\",goo\r\nboo,\"foo\"\"woo\",goo\r\n"
-# csv_parser = ParserCombinator.build do |h|
-#   
-# end
-
-# csv_parser.parse csv
-
-parser = ParserCombinator.build do
-  string('foo').endby1(string ':)')
+csv = "boo,\"foo,woo\",goo\r\nboo,\"foo\"\"woo\",goo\r\n"
+csv_parser = ParserCombinator.build do |h|
+  lf = string "\x0a"
+  cr = string "\x0d"
+  crlf = cr >> lf
+  dquote = string '"'
+  comma = string ','
+  textdata = regexp /\A[a-z]+/i
+  nonescaped = textdata.many
+  escaped = dquote >> (textdata | comma | cr | lf | (dquote >> dquote).try).many << dquote
+  field = escaped | nonescaped
+  record = field.sepby1 comma
+  record.endby1(crlf)
 end
 
-p parser.parse('foofoofoo:)')
+p csv_parser.parse(csv)
+
+# parser = ParserCombinator.build do
+#   string('foo').endby1(string ':)')
+# end
+# 
+# p parser.parse('foofoofoo:)')
 
 __END__
