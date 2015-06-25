@@ -18,7 +18,22 @@ describe ParserCombinator do
         expect(@parser.parse('xfoo').fail?).to be(true)
       end
     end
-    
+
+    context '#regexp' do
+      before :each do
+        @parser = @context.regexp /\Afoo[2-5]/i
+      end
+      
+      it 'returns a parser for the regexp' do
+        expect(@parser.parse('FoO4').matched).to eq('FoO4')
+        expect(@parser.parse('foo1').fail?).to be(true)
+      end
+      
+      it 'raises an InvalidOperationError if the regexp not start with \A' do
+        expect{@context.regexp /^foo[2-5]/}.to raise_error(ParserCombinator::InvalidOperationError)
+      end
+    end
+
     context '#many' do
       before :each do
         @parser = @context.string('foo').many
