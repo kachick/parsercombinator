@@ -21,7 +21,7 @@ describe ParserCombinator do
 
     context '#regexp' do
       before :each do
-        @parser = @context.regexp /\Afoo[2-5]/i
+        @parser = @context.regexp(/\Afoo[2-5]/i)
       end
       
       it 'returns a parser for the regexp' do
@@ -30,7 +30,19 @@ describe ParserCombinator do
       end
       
       it 'raises an InvalidOperationError if the regexp not start with \A' do
-        expect{@context.regexp /^foo[2-5]/}.to raise_error(ParserCombinator::InvalidOperationError)
+        expect{@context.regexp(/^foo[2-5]/)}.to raise_error(ParserCombinator::InvalidOperationError)
+      end
+    end
+
+    context '#optional' do
+      before :each do
+        @parser = @context.string('foo').optional + @context.rest
+      end
+      
+      it 'returns a parser for the string, the parser passes when unmatched' do
+        expect(@parser.parse('foo').matched).to eq(['foo', ''])
+        expect(@parser.parse('xfoo').pass?).to be(true)
+        expect(@parser.parse('xfoo').matched).to eq([nil, 'xfoo'])
       end
     end
 
